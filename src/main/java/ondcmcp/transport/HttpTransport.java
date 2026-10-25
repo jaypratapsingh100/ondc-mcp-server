@@ -37,8 +37,20 @@ public final class HttpTransport {
         return http;
     }
 
+    /**
+     * DNS-rebinding guard (MCP transport guidance): a browser page on another site can reach a
+     * server bound to localhost, but it always sends an Origin header. Allow requests with no
+     * Origin (CLI/desktop clients) or a localhost Origin; refuse everything else.
+     */
+    static boolean originAllowed(String origin) {
+        if (origin == null || origin.isBlank()) return true;
+        String o = origin.trim().toLowerCase(java.util.Locale.ROOT);
+        return o.matches("https?://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d+)?");
+    }
+
     void handle(HttpExchange ex) throws IOException {
         try {
+            if (!originAllowed(ex.getRequestHeaders().getFirst("Origin"))) { respond(ex, 403, "{\"error\":\"origin not allowed\"}"); return; }
             if (bearer != null) {
                 String auth = ex.getRequestHeaders().getFirst("Authorization");
                 boolean ok = auth != null && auth.startsWith("Bearer ") && MessageDigest.isEqual(auth.substring(7).trim().getBytes(StandardCharsets.UTF_8), bearer.getBytes(StandardCharsets.UTF_8));

@@ -50,6 +50,10 @@ class TransportTest {
             assertTrue(body.at("/result/tools").size() > 20);
             HttpResponse<String> note = c.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/mcp")).header("Authorization", "Bearer s3cret").POST(HttpRequest.BodyPublishers.ofString("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}")).build(), HttpResponse.BodyHandlers.ofString());
             assertEquals(202, note.statusCode());
+            HttpResponse<String> evil = c.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/mcp")).header("Authorization", "Bearer s3cret").header("Origin", "https://evil.example").POST(HttpRequest.BodyPublishers.ofString("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"}")).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(403, evil.statusCode(), "cross-site origin must be refused");
+            HttpResponse<String> local = c.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/mcp")).header("Authorization", "Bearer s3cret").header("Origin", "http://localhost:6274").POST(HttpRequest.BodyPublishers.ofString("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"}")).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, local.statusCode());
             HttpResponse<String> get = c.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/mcp")).header("Authorization", "Bearer s3cret").GET().build(), HttpResponse.BodyHandlers.ofString());
             assertEquals(405, get.statusCode());
         } finally { http.stop(0); }
