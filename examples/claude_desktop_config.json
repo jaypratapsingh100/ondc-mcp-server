@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ondc": {
+      "command": "java",
+      "args": ["-jar", "/ABSOLUTE/PATH/ondc-mcp-server.jar"]
+    }
+  }
+}
